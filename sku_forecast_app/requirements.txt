@@ -6,4 +6,3 @@ pmdarima>=2.0
 prophet>=1.1  # Optional; install if Prophet forecasts are desired
 holidays>=0.34
 python-dateutil>=2.8
-streamlit-authenticator>=0.2

@@ -1,20 +1,11 @@
 """Streamlit entry point for the SKU demand forecasting app."""
 from __future__ import annotations
 
-import inspect
 from pathlib import Path
-from typing import Dict, List
 
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
-
-try:  # pragma: no cover - environment dependency guard
-    import streamlit_authenticator as stauth
-    AUTH_LIB_AVAILABLE = True
-except ModuleNotFoundError:  # pragma: no cover - executed when dependency missing
-    stauth = None
-    AUTH_LIB_AVAILABLE = False
 
 from src.forecasting import PROPHET_INSTALLED, forecast_dispatch
 from src.utils import aggregate_time_series, describe_series, ensure_schema, get_sku_list
@@ -34,7 +25,6 @@ def load_css() -> None:
     if css_path.exists():
         st.markdown(f"<style>{css_path.read_text()}</style>", unsafe_allow_html=True)
 
-
 @st.cache_data(show_spinner=False)
 def load_csv(uploaded_file) -> pd.DataFrame:
     return pd.read_csv(uploaded_file)
@@ -43,79 +33,6 @@ def load_csv(uploaded_file) -> pd.DataFrame:
 @st.cache_data(show_spinner=False)
 def aggregate_cached(df: pd.DataFrame, freq: str) -> pd.DataFrame:
     return aggregate_time_series(df, freq)
-
-
-def _hash_passwords(passwords: List[str]) -> List[str]:
-    """Hash demo passwords across streamlit-authenticator versions."""
-    hasher_cls = getattr(stauth, "Hasher", None)
-    if hasher_cls is None:  # pragma: no cover - defensive guard
-        raise AttributeError("streamlit-authenticator missing Hasher class")
-
-    try:
-        init_params = list(inspect.signature(hasher_cls.__init__).parameters.values())
-    except (TypeError, ValueError):  # pragma: no cover - fallback when signature unavailable
-        init_params = []
-
-    # Legacy releases accept passwords via the constructor (self, passwords).
-    if len(init_params) > 1:
-        return hasher_cls(passwords).generate()
-
-    # Newer releases require instantiation without arguments and passing the
-    # password list to ``generate``.
-    hasher = hasher_cls()
-    generate_fn = getattr(hasher, "generate", None)
-    if callable(generate_fn):
-        return generate_fn(passwords)
-
-    # As a last resort, attempt the legacy behaviour which will raise an
-    # informative error if the API has changed again.
-    return hasher_cls(passwords).generate()
-
-
-def render_authentication() -> Dict[str, str]:
-    if not AUTH_LIB_AVAILABLE:
-        st.error(
-            "Missing optional dependency `streamlit-authenticator`. "
-            "Install it with `pip install streamlit-authenticator` to enable login."
-        )
-        return {"name": None, "status": False, "username": None}
-
-    names = ["Demo User"]
-    usernames = ["demo_user"]
-    passwords = ["demo_password"]  # Replace with secrets manager in production.
-
-    hashed_passwords = _hash_passwords(passwords)
-
-    credentials = {
-        "usernames": {
-            usernames[i]: {"name": names[i], "password": hashed_passwords[i]}
-            for i in range(len(usernames))
-        }
-    }
-
-    authenticator = stauth.Authenticate(
-        credentials,
-        "sku_forecast_cookie",
-        "sku_forecast_signature",
-        cookie_expiry_days=1,
-    )
-
-    name, authentication_status, username = authenticator.login("Login", "main")
-
-    if authentication_status:
-        with st.sidebar:
-            st.markdown(f"**Logged in as:** {name}")
-            authenticator.logout("Logout", "sidebar")
-    elif authentication_status is False:
-        st.error("Invalid username/password")
-    else:
-        st.info("Please log in to continue.")
-
-    return {
-        "name": name,
-        "status": authentication_status,
-        "username": username,
-    }
 
 
 def render_metrics(df: pd.DataFrame, sku: str, freq_label: str) -> None:
@@ -173,10 +90,6 @@ def build_chart(history: pd.DataFrame, forecast: pd.DataFrame, sku: str) -> go.F
 
 def main() -> None:
     load_css()
-
-    auth_state = render_authentication()
-    if auth_state["status"] is not True:
-        st.stop()
 
     st.title("SKU Demand Forecasting")
     st.caption("Upload historical sales and generate demand forecasts per SKU.")
