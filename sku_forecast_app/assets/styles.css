@@ -1,0 +1,56 @@
+/* Global dark theme overrides */
+:root {
+  color-scheme: dark;
+}
+
+/* Hide Streamlit footer */
+footer { visibility: hidden; }
+
+/* Sidebar styling */
+section[data-testid="stSidebar"] {
+  background: linear-gradient(180deg, #1c1c28 0%, #111119 100%);
+  color: #f5f5f5;
+}
+
+section[data-testid="stSidebar"] .stSelectbox, 
+section[data-testid="stSidebar"] .stNumberInput, 
+section[data-testid="stSidebar"] .stRadio, 
+section[data-testid="stSidebar"] .stFileUploader {
+  background-color: rgba(255, 255, 255, 0.02);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 1rem;
+}
+
+.stButton>button,
+section[data-testid="stSidebar"] .stButton>button {
+  border-radius: 999px;
+  background: linear-gradient(135deg, #6366f1 0%, #3b82f6 100%);
+  color: #fefefe;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  font-weight: 600;
+}
+
+.stButton>button:hover,
+section[data-testid="stSidebar"] .stButton>button:hover {
+  filter: brightness(1.1);
+}
+
+/* Metric styling */
+[data-testid="stMetricValue"] {
+  color: #e0e7ff;
+}
+
+/* Plot container */
+.block-container {
+  padding-top: 2rem;
+}
+
+/* File uploader tweaks */
+div[data-testid="stFileUploader"] section {
+  border-radius: 0.75rem;
+  border: 1px dashed rgba(99, 102, 241, 0.6);
+  background-color: rgba(79, 70, 229, 0.08);
+}
