@@ -55,7 +55,20 @@ def render_authentication() -> Dict[str, str]:
     names = ["Demo User"]
     usernames = ["demo_user"]
     passwords = ["demo_password"]  # Replace with secrets manager in production.
-    hashed_passwords = stauth.Hasher(passwords).generate()
+
+    try:
+        hashed_passwords = stauth.Hasher(passwords).generate()
+    except TypeError:
+        # streamlit-authenticator>=0.3.0 updated the Hasher API to require
+        # instantiation without arguments. Try the newer call signature and
+        # re-raise if hashing still fails so that the error surface remains
+        # informative for debugging custom deployments.
+        hasher = stauth.Hasher()
+        generate_fn = getattr(hasher, "generate", None)
+        if callable(generate_fn):
+            hashed_passwords = generate_fn(passwords)
+        else:  # pragma: no cover - defensive path for unexpected API changes
+            raise
 
     credentials = {
         "usernames": {
