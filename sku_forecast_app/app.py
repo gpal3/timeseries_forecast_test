@@ -7,7 +7,13 @@ from typing import Dict
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
-import streamlit_authenticator as stauth
+
+try:  # pragma: no cover - environment dependency guard
+    import streamlit_authenticator as stauth
+    AUTH_LIB_AVAILABLE = True
+except ModuleNotFoundError:  # pragma: no cover - executed when dependency missing
+    stauth = None
+    AUTH_LIB_AVAILABLE = False
 
 from src.forecasting import PROPHET_INSTALLED, forecast_dispatch
 from src.utils import aggregate_time_series, describe_series, ensure_schema, get_sku_list
@@ -39,6 +45,13 @@ def aggregate_cached(df: pd.DataFrame, freq: str) -> pd.DataFrame:
 
 
 def render_authentication() -> Dict[str, str]:
+    if not AUTH_LIB_AVAILABLE:
+        st.error(
+            "Missing optional dependency `streamlit-authenticator`. "
+            "Install it with `pip install streamlit-authenticator` to enable login."
+        )
+        return {"name": None, "status": False, "username": None}
+
     names = ["Demo User"]
     usernames = ["demo_user"]
     passwords = ["demo_password"]  # Replace with secrets manager in production.
