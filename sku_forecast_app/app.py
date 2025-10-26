@@ -1,8 +1,9 @@
 """Streamlit entry point for the SKU demand forecasting app."""
 from __future__ import annotations
 
+import inspect
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -44,6 +45,33 @@ def aggregate_cached(df: pd.DataFrame, freq: str) -> pd.DataFrame:
     return aggregate_time_series(df, freq)
 
 
+def _hash_passwords(passwords: List[str]) -> List[str]:
+    """Hash demo passwords across streamlit-authenticator versions."""
+    hasher_cls = getattr(stauth, "Hasher", None)
+    if hasher_cls is None:  # pragma: no cover - defensive guard
+        raise AttributeError("streamlit-authenticator missing Hasher class")
+
+    try:
+        init_params = list(inspect.signature(hasher_cls.__init__).parameters.values())
+    except (TypeError, ValueError):  # pragma: no cover - fallback when signature unavailable
+        init_params = []
+
+    # Legacy releases accept passwords via the constructor (self, passwords).
+    if len(init_params) > 1:
+        return hasher_cls(passwords).generate()
+
+    # Newer releases require instantiation without arguments and passing the
+    # password list to ``generate``.
+    hasher = hasher_cls()
+    generate_fn = getattr(hasher, "generate", None)
+    if callable(generate_fn):
+        return generate_fn(passwords)
+
+    # As a last resort, attempt the legacy behaviour which will raise an
+    # informative error if the API has changed again.
+    return hasher_cls(passwords).generate()
+
+
 def render_authentication() -> Dict[str, str]:
     if not AUTH_LIB_AVAILABLE:
         st.error(
@@ -56,19 +84,7 @@ def render_authentication() -> Dict[str, str]:
     usernames = ["demo_user"]
     passwords = ["demo_password"]  # Replace with secrets manager in production.
 
-    try:
-        hashed_passwords = stauth.Hasher(passwords).generate()
-    except TypeError:
-        # streamlit-authenticator>=0.3.0 updated the Hasher API to require
-        # instantiation without arguments. Try the newer call signature and
-        # re-raise if hashing still fails so that the error surface remains
-        # informative for debugging custom deployments.
-        hasher = stauth.Hasher()
-        generate_fn = getattr(hasher, "generate", None)
-        if callable(generate_fn):
-            hashed_passwords = generate_fn(passwords)
-        else:  # pragma: no cover - defensive path for unexpected API changes
-            raise
+    hashed_passwords = _hash_passwords(passwords)
 
     credentials = {
         "usernames": {

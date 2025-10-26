@@ -69,6 +69,9 @@ Prophet is optional. If it is not available, the app automatically falls back to
 - **`ModuleNotFoundError: No module named 'streamlit_authenticator'`**
   - Ensure `streamlit-authenticator` is installed by running `pip install streamlit-authenticator`.
   - Reinstall dependencies using `pip install -r sku_forecast_app/requirements.txt`.
+- **`TypeError: Hasher.__init__() takes 1 positional argument but 2 were given`**
+  - You are likely running a newer release of `streamlit-authenticator`. The included app automatically adjusts to both the old and new `Hasher` APIs, so make sure you are using the latest project files.
+  - If you copied the authentication section into another project, update it to instantiate `stauth.Hasher()` without arguments and call `.generate(passwords)`.
 - **Prophet installation issues**
   - Prophet may require additional system dependencies (C++ compiler, pystan). If installation is problematic, remove the Prophet requirement and rely on ARIMA forecasts.
 
