@@ -3,14 +3,16 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import streamlit as st
+
 import pandas as pd
 import plotly.graph_objects as go
-import streamlit as st
 
 from src.forecasting import PROPHET_INSTALLED, forecast_dispatch
 from src.utils import aggregate_time_series, describe_series, ensure_schema, get_sku_list
 
 ASSETS_DIR = Path(__file__).parent / "assets"
+SAMPLE_DATA_PATH = Path(__file__).parent / "sample_data" / "sku_sales_sample.csv"
 
 
 st.set_page_config(
@@ -24,6 +26,14 @@ def load_css() -> None:
     css_path = ASSETS_DIR / "styles.css"
     if css_path.exists():
         st.markdown(f"<style>{css_path.read_text()}</style>", unsafe_allow_html=True)
+
+
+@st.cache_data(show_spinner=False)
+def load_sample_data() -> bytes:
+    if SAMPLE_DATA_PATH.exists():
+        return SAMPLE_DATA_PATH.read_bytes()
+    return b""
+
 
 @st.cache_data(show_spinner=False)
 def load_csv(uploaded_file) -> pd.DataFrame:
@@ -96,10 +106,21 @@ def main() -> None:
 
     with st.sidebar:
         st.header("Data & Settings")
+        if SAMPLE_DATA_PATH.exists():
+            st.download_button(
+                label="Download sample data",
+                data=load_sample_data(),
+                file_name=SAMPLE_DATA_PATH.name,
+                mime="text/csv",
+            )
+            st.caption("Simulated daily sales for three SKUs (Jan–Jun 2022).")
         uploaded_file = st.file_uploader("Upload CSV", type="csv")
 
     if not uploaded_file:
-        st.info("Upload a CSV file with columns for date, sku, and value to begin.")
+        message = "Upload a CSV file with columns for date, sku, and value to begin."
+        if SAMPLE_DATA_PATH.exists():
+            message += " Or download the provided sample data from the sidebar."
+        st.info(message)
         return
 
     try:

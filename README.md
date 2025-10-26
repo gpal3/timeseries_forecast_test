@@ -56,6 +56,14 @@ Prophet is optional. If it is not available, the app automatically falls back to
 - Download the generated forecast as a CSV directly from the interface.
 - The starter app ships without authentication. Integrate your preferred login flow before deploying to production.
 
+## Sample Data
+
+- A simulated dataset is included at `sku_forecast_app/sample_data/sku_sales_sample.csv` with daily sales for three SKUs
+  from January through June 2022.
+- Use the "Download sample data" button in the app sidebar (or download the file directly from the repository) to
+  experiment with the workflow before loading your own data.
+- The CSV uses the schema `date, sku, value` and is ready for immediate upload without remapping columns.
+
 ## Troubleshooting
 
 - **Prophet installation issues**
